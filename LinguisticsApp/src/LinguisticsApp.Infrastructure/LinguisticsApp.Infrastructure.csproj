@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\LinguisticsApp.DomainModel\LinguisticsApp.DomainModel.csproj" />
+    <ProjectReference Include="..\LinguisticsApp.Application\LinguisticsApp.Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+	  <PackageReference Include="Bogus" Version="35.6.2" />
+	  <PackageReference Include="Microsoft.AspNetCore.Cryptography.KeyDerivation" Version="9.0.2" />
+	  <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.2" />
+	  <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.2" />
+	  <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.6.1" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

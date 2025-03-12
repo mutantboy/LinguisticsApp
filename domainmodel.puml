@@ -1,0 +1,153 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+abstract class User {
+    - id: UserId
+    - username: Email
+    - password: String
+    - firstName: String
+    - lastName: String
+}
+
+entity Admin {
+    - canModifyRules: Boolean
+}
+
+entity Researcher {
+    - institution: String
+    - field: ResearchField
+}
+
+entity PhonemeInventory {
+    - id: PhonemeInventoryId
+    - name: LanguageName
+    - stressPattern: StressPattern
+    - consonants: Set<Phoneme>
+    - vowels: Set<Phoneme>
+}
+
+entity SoundShiftRule {
+    - id: SoundShiftRuleId
+    - type: RuleType
+    - environment: String
+    - inputPhoneme: Phoneme
+    - outputPhoneme: Phoneme
+}
+
+entity CognateSet {
+    - id: CognateSetId
+    - protoForm: ProtoForm
+    - field: SemanticField
+    - attestedExamples: Dictionary<String, String>
+}
+
+entity SemanticShift {
+    - id: SemanticShiftId
+    - originalMeaning: String
+    - modernMeaning: String
+    - trigger: ShiftTrigger
+}
+
+entity LanguageContactEvent {
+    - id: LanguageContactEventId
+    - type: ContactType
+    - loanwordsAdopted: Set<String>
+    - grammaticalInfluence: String
+}
+
+class Phoneme << (V,#558800) ValueObject >> {
+    - value: String
+    - isVowel: Boolean
+}
+
+class LanguageName << (V,#558800) RichType >> {
+    - value: String
+}
+
+class ProtoForm << (V,#558800) RichType >> {
+    - value: String
+}
+
+class Email << (V,#558800) RichType >> {
+    - value: String
+}
+
+enum StressPattern {
+    INITIAL
+    PENULTIMATE
+    ULTIMATE
+    FREE
+    LEXICAL
+}
+
+enum RuleType {
+    CONSONANT_SHIFT
+    VOWEL_MUTATION
+    METATHESIS
+    EPENTHESIS
+    DELETION
+}
+
+enum SemanticField {
+    KINSHIP
+    NATURE
+    TECHNOLOGY
+    RELIGION
+    EVERYDAY
+}
+
+enum ShiftTrigger {
+    CULTURAL_TABOO
+    TECHNOLOGICAL_CHANGE
+    SOCIAL_CHANGE
+    EUPHEMISM
+    SPECIALIZATION
+}
+
+enum ContactType {
+    TRADE
+    COLONIZATION
+    RELIGIOUS_MISSION
+    MIGRATION
+    CONQUEST
+}
+
+enum ResearchField {
+    HISTORICAL_LINGUISTICS
+    COMPARATIVE_LINGUISTICS
+    PHONOLOGY
+    SEMANTICS
+    COGNITIVE_SCIENCE
+}
+
+' Inheritance relationships
+User <|-- Admin
+User <|-- Researcher
+
+' Associations with aggregation
+PhonemeInventory "0..n" o-- "1" Researcher : > created by
+SoundShiftRule "0..n" o-- "1" PhonemeInventory : > applies to
+SoundShiftRule "0..n" o-- "1" Researcher : > created by
+CognateSet "0..n" o-- "1" PhonemeInventory : > reconstructed from
+CognateSet "1" o-- "0..n" SemanticShift : > undergoes
+SemanticShift "0..n" o-- "0..n" LanguageContactEvent : > caused by
+LanguageContactEvent "0..n" o-- "1" PhonemeInventory : > source
+LanguageContactEvent "0..n" o-- "1" PhonemeInventory : > target
+LanguageContactEvent "0..n" o-- "0..n" SemanticShift : > causes
+
+' Enumerations
+PhonemeInventory .right. StressPattern
+SoundShiftRule .right. RuleType
+CognateSet .right. SemanticField
+SemanticShift .right. ShiftTrigger
+LanguageContactEvent .right. ContactType
+Researcher .right. ResearchField
+
+' ValueObjects
+PhonemeInventory "1" *-- "0..n" Phoneme : consonants >
+PhonemeInventory "1" *-- "0..n" Phoneme : vowels >
+PhonemeInventory -- LanguageName
+CognateSet -- ProtoForm
+User -- Email
+
+@enduml

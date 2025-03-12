@@ -1,0 +1,57 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{76B05AF6-FCBA-4146-820F-DD84FBA7E129}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LinguisticsApp.DomainModel", "src\LinguisticsApp.DomainModel\LinguisticsApp.DomainModel.csproj", "{42D1A3AD-DDDF-4D3D-BE38-D447DF5B929E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LinguisticsApp.Application", "src\LinguisticsApp.Application\LinguisticsApp.Application.csproj", "{A8050C77-D74B-4913-AF0B-E23768DDCA75}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LinguisticsApp.Infrastructure", "src\LinguisticsApp.Infrastructure\LinguisticsApp.Infrastructure.csproj", "{B15F7590-41FC-4002-8D05-A114E203A19F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LinguisticsApp.WebApi", "src\LinguisticsApp.WebApi\LinguisticsApp.WebApi.csproj", "{D1E19654-CA46-45A9-9CE7-A890523A69BE}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{FA94B0B0-A7DA-4B40-BFBC-659D1DA24BEF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LinguisticsApp.Tests", "test\LinguisticsApp.Tests\LinguisticsApp.Tests.csproj", "{7763E3CD-8F99-4311-B43B-C68725B3B5D3}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{42D1A3AD-DDDF-4D3D-BE38-D447DF5B929E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{42D1A3AD-DDDF-4D3D-BE38-D447DF5B929E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{42D1A3AD-DDDF-4D3D-BE38-D447DF5B929E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{42D1A3AD-DDDF-4D3D-BE38-D447DF5B929E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A8050C77-D74B-4913-AF0B-E23768DDCA75}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A8050C77-D74B-4913-AF0B-E23768DDCA75}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A8050C77-D74B-4913-AF0B-E23768DDCA75}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A8050C77-D74B-4913-AF0B-E23768DDCA75}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B15F7590-41FC-4002-8D05-A114E203A19F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B15F7590-41FC-4002-8D05-A114E203A19F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B15F7590-41FC-4002-8D05-A114E203A19F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B15F7590-41FC-4002-8D05-A114E203A19F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D1E19654-CA46-45A9-9CE7-A890523A69BE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D1E19654-CA46-45A9-9CE7-A890523A69BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D1E19654-CA46-45A9-9CE7-A890523A69BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D1E19654-CA46-45A9-9CE7-A890523A69BE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7763E3CD-8F99-4311-B43B-C68725B3B5D3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7763E3CD-8F99-4311-B43B-C68725B3B5D3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7763E3CD-8F99-4311-B43B-C68725B3B5D3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7763E3CD-8F99-4311-B43B-C68725B3B5D3}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{42D1A3AD-DDDF-4D3D-BE38-D447DF5B929E} = {76B05AF6-FCBA-4146-820F-DD84FBA7E129}
+		{A8050C77-D74B-4913-AF0B-E23768DDCA75} = {76B05AF6-FCBA-4146-820F-DD84FBA7E129}
+		{B15F7590-41FC-4002-8D05-A114E203A19F} = {76B05AF6-FCBA-4146-820F-DD84FBA7E129}
+		{D1E19654-CA46-45A9-9CE7-A890523A69BE} = {76B05AF6-FCBA-4146-820F-DD84FBA7E129}
+		{7763E3CD-8F99-4311-B43B-C68725B3B5D3} = {FA94B0B0-A7DA-4B40-BFBC-659D1DA24BEF}
+	EndGlobalSection
+EndGlobal

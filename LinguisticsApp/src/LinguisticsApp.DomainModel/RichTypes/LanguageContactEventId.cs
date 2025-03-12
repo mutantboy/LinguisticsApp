@@ -12,6 +12,7 @@ namespace LinguisticsApp.DomainModel.RichTypes
     {
         public Guid Value { get; }
 
+        public LanguageContactEventId() { }
         public LanguageContactEventId(Guid value)
         {
             Value = value;

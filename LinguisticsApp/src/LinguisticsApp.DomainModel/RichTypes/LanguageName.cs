@@ -12,6 +12,8 @@ namespace LinguisticsApp.DomainModel.RichTypes
     {
         public string Value { get; }
 
+        protected LanguageName() { }
+
         public LanguageName(string value)
         {
             if (string.IsNullOrWhiteSpace(value))

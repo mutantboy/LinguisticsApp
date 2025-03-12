@@ -12,6 +12,8 @@ namespace LinguisticsApp.DomainModel.RichTypes
     {
         public Guid Value { get; }
 
+        public SoundShiftRuleId() { }
+
         public SoundShiftRuleId(Guid value)
         {
             Value = value;

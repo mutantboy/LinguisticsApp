@@ -12,6 +12,8 @@ namespace LinguisticsApp.DomainModel.RichTypes
     {
         public Guid Value { get; }
 
+        public CognateSetId() { }
+
         public CognateSetId(Guid value)
         {
             Value = value;

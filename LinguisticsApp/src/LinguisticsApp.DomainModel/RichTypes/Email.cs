@@ -12,6 +12,8 @@ namespace LinguisticsApp.DomainModel.RichTypes
     {
         public string Value { get; }
 
+        protected Email() { }
+
         public Email(string value)
         {
             if (string.IsNullOrWhiteSpace(value))

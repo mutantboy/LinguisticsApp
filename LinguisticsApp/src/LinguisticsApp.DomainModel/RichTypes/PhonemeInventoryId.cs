@@ -12,6 +12,7 @@ namespace LinguisticsApp.DomainModel.RichTypes
     {
         public Guid Value { get; }
 
+        public PhonemeInventoryId() { }
         public PhonemeInventoryId(Guid value)
         {
             Value = value;

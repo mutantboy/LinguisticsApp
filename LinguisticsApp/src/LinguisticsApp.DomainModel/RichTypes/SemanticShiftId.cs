@@ -12,6 +12,8 @@ namespace LinguisticsApp.DomainModel.RichTypes
     {
         public Guid Value { get; }
 
+        public SemanticShiftId() { }
+
         public SemanticShiftId(Guid value)
         {
             Value = value;

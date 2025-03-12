@@ -12,6 +12,8 @@ namespace LinguisticsApp.DomainModel.RichTypes
     {
         public Guid Value { get; }
 
+        public UserId() : this(Guid.Empty) { }
+
         public UserId(Guid value)
         {
             Value = value;

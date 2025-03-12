@@ -12,6 +12,8 @@ namespace LinguisticsApp.DomainModel.RichTypes
     {
         public string Value { get; }
 
+        protected ProtoForm() { }
+
         public ProtoForm(string value)
         {
             if (string.IsNullOrWhiteSpace(value))

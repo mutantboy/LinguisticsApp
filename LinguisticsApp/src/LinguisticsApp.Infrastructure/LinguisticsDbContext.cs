@@ -39,7 +39,57 @@ namespace LinguisticsApp.Infrastructure.Persistence
             base.OnModelCreating(modelBuilder);
 
             // Add all custom value converters
-            modelBuilder.AddStronglyTypedIdValueConverters();
+            modelBuilder.Entity<User>().Property(u => u.Id).HasConversion(
+                id => id.Value,
+                value => new UserId(value));
+
+            modelBuilder.Entity<Admin>().Property(u => u.Id).HasConversion(
+                id => id.Value,
+                value => new UserId(value));
+
+            modelBuilder.Entity<Researcher>().Property(u => u.Id).HasConversion(
+                id => id.Value,
+                value => new UserId(value));
+
+            // Email rich type
+            modelBuilder.Entity<User>().Property(u => u.Username).HasConversion(
+                email => email.Value,
+                value => new Email(value));
+
+            // PhonemeInventory ID
+            modelBuilder.Entity<PhonemeInventory>().Property(p => p.Id).HasConversion(
+                id => id.Value,
+                value => new PhonemeInventoryId(value));
+
+            // Language Name
+            modelBuilder.Entity<PhonemeInventory>().Property(p => p.Name).HasConversion(
+                name => name.Value,
+                value => new LanguageName(value));
+
+            // SoundShiftRule ID
+            modelBuilder.Entity<SoundShiftRule>().Property(s => s.Id).HasConversion(
+                id => id.Value,
+                value => new SoundShiftRuleId(value));
+
+            // CognateSet ID
+            modelBuilder.Entity<CognateSet>().Property(c => c.Id).HasConversion(
+                id => id.Value,
+                value => new CognateSetId(value));
+
+            // ProtoForm
+            modelBuilder.Entity<CognateSet>().Property(c => c.ProtoForm).HasConversion(
+                form => form.Value,
+                value => new ProtoForm(value));
+
+            // SemanticShift ID
+            modelBuilder.Entity<SemanticShift>().Property(s => s.Id).HasConversion(
+                id => id.Value,
+                value => new SemanticShiftId(value));
+
+            // LanguageContactEvent ID
+            modelBuilder.Entity<LanguageContactEvent>().Property(l => l.Id).HasConversion(
+                id => id.Value,
+                value => new LanguageContactEventId(value));
 
             //enum conversions
             modelBuilder.Entity<PhonemeInventory>()
@@ -78,24 +128,6 @@ namespace LinguisticsApp.Infrastructure.Persistence
                     v => _researchFieldValues[(int)v],
                     v => (ResearchField)Array.IndexOf(_researchFieldValues, v));
 
-            // value object stuff
-            modelBuilder.Entity<PhonemeInventory>()
-                .OwnsMany(pi => pi.Consonants, pb =>
-                {
-                    pb.ToTable("PhonemeInventoryConsonants");
-                    pb.WithOwner().HasForeignKey("PhonemeInventoryId");
-                    pb.Property<int>("Id").ValueGeneratedOnAdd();
-                    pb.HasKey("Id");
-                });
-
-            modelBuilder.Entity<PhonemeInventory>()
-                .OwnsMany(pi => pi.Vowels, pb =>
-                {
-                    pb.ToTable("PhonemeInventoryVowels");
-                    pb.WithOwner().HasForeignKey("PhonemeInventoryId");
-                    pb.Property<int>("Id").ValueGeneratedOnAdd();
-                    pb.HasKey("Id");
-                });
 
             modelBuilder.Entity<CognateSet>()
                 .Property(cs => cs.AttestedExamples)
@@ -108,6 +140,44 @@ namespace LinguisticsApp.Infrastructure.Persistence
                 .HasConversion(
                     v => string.Join(";", v),
                     v => new HashSet<string>(v.Split(';', StringSplitOptions.RemoveEmptyEntries)));
+
+            // value object stuff
+            modelBuilder.Entity<PhonemeInventory>()
+                .OwnsMany(pi => pi.Consonants, builder =>
+                {
+                    builder.ToTable("PhonemeInventoryConsonants");
+                    builder.WithOwner().HasForeignKey("PhonemeInventoryId");
+                    builder.Property<int>("Id").ValueGeneratedOnAdd();
+                    builder.HasKey("Id");
+                    builder.Property(p => p.Value).IsRequired();
+                    builder.Property(p => p.IsVowel).IsRequired();
+                });
+
+            modelBuilder.Entity<PhonemeInventory>()
+                .OwnsMany(pi => pi.Vowels, builder =>
+                {
+                    builder.ToTable("PhonemeInventoryVowels");
+                    builder.WithOwner().HasForeignKey("PhonemeInventoryId");
+                    builder.Property<int>("Id").ValueGeneratedOnAdd();
+                    builder.HasKey("Id");
+                    builder.Property(p => p.Value).IsRequired();
+                    builder.Property(p => p.IsVowel).IsRequired();
+                });
+            modelBuilder.Entity<SoundShiftRule>()
+                .OwnsOne(r => r.InputPhoneme, phoneme =>
+                {
+                    phoneme.ToTable("SoundShiftRuleInputPhonemes");
+                    phoneme.Property(p => p.Value).HasColumnName("InputPhonemeValue");
+                    phoneme.Property(p => p.IsVowel).HasColumnName("InputPhonemeIsVowel");
+                });
+
+            modelBuilder.Entity<SoundShiftRule>()
+                .OwnsOne(r => r.OutputPhoneme, phoneme =>
+                {
+                    phoneme.ToTable("SoundShiftRuleOutputPhonemes");
+                    phoneme.Property(p => p.Value).HasColumnName("OutputPhonemeValue");
+                    phoneme.Property(p => p.IsVowel).HasColumnName("OutputPhonemeIsVowel");
+                });
 
             // Configure relationships
             modelBuilder.Entity<User>()
@@ -175,6 +245,8 @@ namespace LinguisticsApp.Infrastructure.Persistence
             modelBuilder.Entity<CognateSet>()
                 .Property<byte[]>("RowVersion")
                 .IsRowVersion();
+
+
         }
 
         // Helper methods for converting Dictionary to string and back
@@ -196,9 +268,109 @@ namespace LinguisticsApp.Infrastructure.Persistence
         }
     }
 
-    // Extensions for ModelBuilder to automatically register all value converters
     public static class ModelBuilderExtensions
     {
+        public static ModelBuilder AddStronglyTypedIdValueConverters(this ModelBuilder modelBuilder)
+        {
+            var assembly = typeof(EfCoreValueConverterAttribute).Assembly;
+
+            var typesWithConverterAttribute = assembly.GetTypes()
+                .Where(t => t.GetCustomAttributes<EfCoreValueConverterAttribute>().Any());
+
+            foreach (var type in typesWithConverterAttribute)
+            {
+                var attribute = type.GetCustomAttribute<EfCoreValueConverterAttribute>();
+                if (attribute == null) continue;
+
+                try
+                {
+                    var converter = Activator.CreateInstance(attribute.ValueConverter) as ValueConverter;
+                    if (converter == null) continue;
+
+                    foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+                    {
+                        var properties = entityType.GetProperties()
+                            .Where(p => p.ClrType == type);
+
+                        foreach (var property in properties)
+                        {
+                            property.SetValueConverter(converter);
+                        }
+
+                        foreach (var navigation in entityType.GetNavigations())
+                        {
+                            if (navigation.ClrType == type)
+                            {
+                                navigation.ForeignKey.Properties
+                                    .ToList()
+                                    .ForEach(p => p.SetValueConverter(converter));
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error applying converter for type {type.Name}: {ex.Message}");
+                }
+            }
+
+            return modelBuilder;
+        }
+    }
+
+    // Extensions for ModelBuilder to automatically register all value converters
+    /*public static class ModelBuilderExtensions
+    {
+        public static ModelBuilder AddStronglyTypedIdValueConverters<T>(
+            this ModelBuilder modelBuilder)
+        {
+            var assembly = typeof(T).Assembly;
+            foreach (var type in assembly.GetTypes())
+            {
+                // Try and get the attribute
+                var attribute = type
+                    .GetCustomAttributes<EfCoreValueConverterAttribute>()
+                    .FirstOrDefault();
+
+                if (attribute is null)
+                {
+                    continue;
+                }
+
+                // The ValueConverter must have a parameterless constructor
+                var converter = (ValueConverter)Activator.CreateInstance(attribute.ValueConverter);
+
+                // Register the value converter for all EF Core properties that use the ID
+                modelBuilder.UseValueConverter(converter);
+            }
+
+            return modelBuilder;
+        }
+
+        // This method is the same as shown previously
+        public static ModelBuilder UseValueConverter(
+            this ModelBuilder modelBuilder, ValueConverter converter)
+        {
+            var type = converter.ModelClrType;
+
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                var properties = entityType
+                    .ClrType
+                    .GetProperties()
+                    .Where(p => p.PropertyType == type);
+
+                foreach (var property in properties)
+                {
+                    modelBuilder
+                        .Entity(entityType.Name)
+                        .Property(property.Name)
+                        .HasConversion(converter);
+                }
+            }
+
+            return modelBuilder;
+        }
         public static ModelBuilder AddStronglyTypedIdValueConverters(this ModelBuilder modelBuilder)
         {
             var assembly = typeof(EfCoreValueConverterAttribute).Assembly;
@@ -221,26 +393,23 @@ namespace LinguisticsApp.Infrastructure.Persistence
             return modelBuilder;
         }
 
-        public static ModelBuilder ApplyValueConverterToMatchingProperties(
-            this ModelBuilder modelBuilder, ValueConverter converter)
+        public static ModelBuilder ApplyValueConverterToMatchingProperties(this ModelBuilder modelBuilder, ValueConverter converter)
         {
             var type = converter.ModelClrType;
 
             foreach (var entityType in modelBuilder.Model.GetEntityTypes())
             {
-                var properties = entityType.ClrType.GetProperties()
-                    .Where(p => p.PropertyType == type);
-
-                foreach (var property in properties)
+                // Try to find properties directly on the entity type
+                foreach (var property in entityType.GetProperties())
                 {
-                    modelBuilder
-                        .Entity(entityType.Name)
-                        .Property(property.Name)
-                        .HasConversion(converter);
+                    if (property.ClrType == type)
+                    {
+                        property.SetValueConverter(converter);
+                    }
                 }
             }
 
             return modelBuilder;
         }
-    }
+    }*/
 }

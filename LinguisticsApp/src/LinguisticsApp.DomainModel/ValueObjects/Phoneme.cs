@@ -11,6 +11,8 @@ namespace LinguisticsApp.DomainModel.ValueObjects
         public string Value { get; }
         public bool IsVowel { get; }
 
+        protected Phoneme() { }
+
         public Phoneme(string value, bool isVowel)
         {
             if (string.IsNullOrWhiteSpace(value))

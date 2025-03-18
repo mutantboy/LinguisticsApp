@@ -22,8 +22,7 @@ namespace LinguisticsApp.Infrastructure.Repository
             var emailValue = email.Value;
 
             return await _dbContext.Set<User>()
-                .Where(u => EF.Property<string>(u, "Username") == emailValue)
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync(u => EF.Property<string>(u, "Username") == emailValue);
         }
     }
 }

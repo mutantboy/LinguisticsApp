@@ -1,3 +1,4 @@
+using LinguisticsApp.Application;
 using LinguisticsApp.Application.Common.Interfaces.Services;
 using LinguisticsApp.Application.Common.Interfaces;
 using LinguisticsApp.Infrastructure.Auth;
@@ -9,6 +10,7 @@ using Microsoft.OpenApi.Models;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using LinguisticsApp.WebApi.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -48,6 +50,8 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddDbContext<LinguisticsDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddApplication();
+
 builder.Services.Configure<JwtAuthOptions>(builder.Configuration.GetSection("JwtAuth"));
 builder.Services.AddScoped<IAuthService, JwtAuthService>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -78,7 +82,6 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// Add authorization policies
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("RequireAdminRole", policy => policy.RequireRole("Admin"));
@@ -87,16 +90,34 @@ builder.Services.AddAuthorization(options =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var dbContext = services.GetRequiredService<LinguisticsDbContext>();
+        var authService = services.GetRequiredService<IAuthService>();
+
+        DbInitializer.Initialize(services, true);
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while initializing the database.");
+    }
+}
 
 app.Run();

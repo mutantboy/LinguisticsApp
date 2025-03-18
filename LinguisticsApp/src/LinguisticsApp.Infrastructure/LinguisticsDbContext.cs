@@ -52,9 +52,12 @@ namespace LinguisticsApp.Infrastructure.Persistence
                 value => new UserId(value));
 
             // Email rich type
-            modelBuilder.Entity<User>().Property(u => u.Username).HasConversion(
-                email => email.Value,
-                value => new Email(value));
+            modelBuilder.Entity<User>()
+                .Property(p => p.Username)
+                .HasConversion(
+                    objValue => objValue.Value,  
+                    dbValue => new Email(dbValue) 
+                );
 
             // PhonemeInventory ID
             modelBuilder.Entity<PhonemeInventory>().Property(p => p.Id).HasConversion(

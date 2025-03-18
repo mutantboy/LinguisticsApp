@@ -30,7 +30,9 @@ namespace LinguisticsApp.WebApi.Controllers
 
             try
             {
-                var user = await _unitOfWork.Users.GetByEmailAsync(new Email(model.Email));
+                var email = new Email(model.Email);
+                var user = await _unitOfWork.Users.GetByEmailAsync(email);
+
                 if (user == null)
                     return BadRequest(new { message = "Invalid email or password" });
 
@@ -63,7 +65,9 @@ namespace LinguisticsApp.WebApi.Controllers
 
             try
             {
-                var existingUser = await _unitOfWork.Users.GetByEmailAsync(new Email(model.Email));
+                var email = new Email(model.Email);
+                var existingUser = await _unitOfWork.Users.GetByEmailAsync(email);
+
                 if (existingUser != null)
                     return BadRequest(new { message = "Email already registered" });
 
@@ -76,11 +80,11 @@ namespace LinguisticsApp.WebApi.Controllers
                 {
                     user = new Admin(
                         userId,
-                        new Email(model.Email),
+                        email, 
                         hashedPassword,
                         model.FirstName,
                         model.LastName,
-                        false /// Default value for CanModifyRules
+                        false 
                     );
                 }
                 else
@@ -90,7 +94,7 @@ namespace LinguisticsApp.WebApi.Controllers
 
                     user = new Researcher(
                         userId,
-                        new Email(model.Email),
+                        email, 
                         hashedPassword,
                         model.FirstName,
                         model.LastName,

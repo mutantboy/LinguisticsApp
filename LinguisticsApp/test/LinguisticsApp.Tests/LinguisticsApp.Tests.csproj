@@ -7,13 +7,22 @@
 
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+	<PreserveCompilationContext>true</PreserveCompilationContext>
   </PropertyGroup>
+
+    <ItemGroup>
+	    <Content Update="xunit.runner.json">
+		    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	    </Content>
+    </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Bogus" Version="35.6.2" />
     <PackageReference Include="coverlet.collector" Version="6.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.3" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.2" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageReference Include="Moq" Version="4.20.72" />
     <PackageReference Include="xunit" Version="2.5.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" />
   </ItemGroup>
@@ -26,7 +35,9 @@
     <ProjectReference Include="..\..\src\LinguisticsApp.DomainModel\LinguisticsApp.DomainModel.csproj" />
     <ProjectReference Include="..\..\src\LinguisticsApp.Application\LinguisticsApp.Application.csproj" />
     <ProjectReference Include="..\..\src\LinguisticsApp.Infrastructure\LinguisticsApp.Infrastructure.csproj" />
-	<ProjectReference Include="..\..\src\LinguisticsApp.WebApi\LinguisticsApp.WebApi.csproj" />  
+	  <ProjectReference Include="..\..\src\LinguisticsApp.WebApi\LinguisticsApp.WebApi.csproj">
+		  <Private>true</Private>
+		  <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
+	  </ProjectReference>  
   </ItemGroup>
-
 </Project>

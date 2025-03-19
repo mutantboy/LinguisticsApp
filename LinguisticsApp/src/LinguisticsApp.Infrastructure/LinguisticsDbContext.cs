@@ -53,10 +53,10 @@ namespace LinguisticsApp.Infrastructure.Persistence
 
             // Email rich type
             modelBuilder.Entity<User>()
-                .Property(p => p.Username)
+                .Property(u => u.Username)
                 .HasConversion(
-                    objValue => objValue.Value,  
-                    dbValue => new Email(dbValue) 
+                    email => email.Value,  
+                    value => new Email(value)  
                 );
 
             // PhonemeInventory ID

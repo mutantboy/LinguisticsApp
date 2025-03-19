@@ -19,10 +19,14 @@ namespace LinguisticsApp.Infrastructure.Repository
 
         public async Task<User?> GetByEmailAsync(Email email)
         {
-            var emailValue = email.Value;
+            /// This would be a better solution, but mysteriously doesnt work idk why
+            /*return await _dbContext.Set<User>()
+                .FirstOrDefaultAsync(u => EF.Property<string>(u, "Username") == email.Value);*/
+
 
             return await _dbContext.Set<User>()
-                .FirstOrDefaultAsync(u => EF.Property<string>(u, "Username") == emailValue);
+                .FromSqlRaw("SELECT * FROM Users WHERE Username = {0}", email.Value)
+                .FirstOrDefaultAsync();
         }
     }
 }

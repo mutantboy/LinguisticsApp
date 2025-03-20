@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LinguisticsApp.Application.Common.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -18,5 +19,9 @@ namespace LinguisticsApp.Application.Common.Interfaces.Repository
         Task<int> SaveChangesAsync();
         Task<int> CountAsync();
         IQueryable<TEntity> GetQueryable();
+
+        Task<PaginatedList<TEntity>> GetPagedAsync(int pageNumber, int pageSize,
+        Expression<Func<TEntity, bool>>? predicate = null,
+        Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null);
     }
 }

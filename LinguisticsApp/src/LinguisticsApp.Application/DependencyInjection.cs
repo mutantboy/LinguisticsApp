@@ -9,6 +9,9 @@ using System.Text;
 using System.Threading.Tasks;
 using MediatR;
 using LinguisticsApp.Application.Common.Behaviours.LinguisticsApp.Application.Common.Behaviors;
+using LinguisticsApp.Application.Common.Interfaces.Services;
+using LinguisticsApp.Application.Common.Interfaces;
+using Microsoft.Extensions.Configuration;
 
 namespace LinguisticsApp.Application
 {
@@ -24,7 +27,7 @@ namespace LinguisticsApp.Application
 
             services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
-            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));                
 
             return services;
         }

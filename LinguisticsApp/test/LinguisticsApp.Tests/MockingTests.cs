@@ -21,6 +21,8 @@ using System.Threading;
 using LinguisticsApp.Application.Common.DTOs.LanguageContactEventDTOs;
 using LinguisticsApp.Application.Common.Commands.LanguageContactEventCommands;
 using LinguisticsApp.DomainModel.ValueObjects;
+using LinguisticsApp.Application.Common.Models;
+using LinguisticsApp.Application.Common.Queries;
 
 namespace LinguisticsApp.Tests.MockingTests
 {
@@ -29,6 +31,7 @@ namespace LinguisticsApp.Tests.MockingTests
         private readonly Mock<IUnitOfWork> _mockUnitOfWork;
         private readonly Mock<IUserRepository> _mockUserRepository;
         private readonly Mock<IAuthService> _mockAuthService;
+        private readonly Mock<IUserService> _mockUserService;
         private readonly AuthController _controller;
 
         public AuthControllerMockingTests()
@@ -36,10 +39,12 @@ namespace LinguisticsApp.Tests.MockingTests
             _mockUserRepository = new Mock<IUserRepository>();
             _mockUnitOfWork = new Mock<IUnitOfWork>();
             _mockAuthService = new Mock<IAuthService>();
+            _mockUserService = new Mock<IUserService>();
+
 
             _mockUnitOfWork.Setup(u => u.Users).Returns(_mockUserRepository.Object);
 
-            _controller = new AuthController(_mockUnitOfWork.Object, _mockAuthService.Object);
+            _controller = new AuthController(_mockUserService.Object);
         }
 
         [Fact]
@@ -270,9 +275,18 @@ namespace LinguisticsApp.Tests.MockingTests
         }
 
         [Fact]
-        public async Task GetAll_ReturnsAllEvents()
+        public async Task GetAll_WithFilter_ReturnsPaginatedEvents()
         {
             // Arrange
+            // Set up a sample filter query
+            var filterQuery = new GetFilteredLanguageContactEventsQuery
+            {
+                PageNumber = 1,
+                PageSize = 10,
+                Type = ContactType.Trade
+            };
+
+            // Create sample language contact events
             var languageContactEvents = new List<LanguageContactEvent>
             {
                 CreateSampleContactEvent(),
@@ -280,28 +294,52 @@ namespace LinguisticsApp.Tests.MockingTests
                 CreateSampleContactEvent()
             };
 
-            var contactEventDtos = new List<LanguageContactEventDto>
+                    // Create sample DTOs for the paginated result
+                    var contactEventDtos = new List<LanguageContactEventDto>
             {
                 new LanguageContactEventDto { Id = Guid.NewGuid(), Type = "Trade" },
-                new LanguageContactEventDto { Id = Guid.NewGuid(), Type = "Migration" },
-                new LanguageContactEventDto { Id = Guid.NewGuid(), Type = "Conquest" }
+                new LanguageContactEventDto { Id = Guid.NewGuid(), Type = "Trade" },
+                new LanguageContactEventDto { Id = Guid.NewGuid(), Type = "Trade" }
             };
 
-            _mockRepository.Setup(r => r.GetAllAsync())
-                .ReturnsAsync(languageContactEvents);
+            // Create a paginated result that the mediator will return
+            var paginatedResult = new PaginatedList<LanguageContactEventDto>(
+                contactEventDtos,
+                count: 3,
+                pageIndex: 1,
+                pageSize: 10);
 
-            _mockMapper.Setup(m => m.Map<IEnumerable<LanguageContactEventDto>>(languageContactEvents))
-                .Returns(contactEventDtos);
+            // Set up the mediator to return the paginated result
+            _mockMediator.Setup(m => m.Send(
+                It.IsAny<GetFilteredLanguageContactEventsQuery>(),
+                It.IsAny<CancellationToken>()))
+                .ReturnsAsync(paginatedResult);
 
             // Act
-            var result = await _controller.GetAll();
+            var result = await _controller.GetAll(filterQuery);
 
             // Assert
-            var okResult = Assert.IsType<ActionResult<IEnumerable<LanguageContactEventDto>>>(result);
-            var okObjectResult = Assert.IsType<OkObjectResult>(okResult.Result);
-            var returnedDtos = Assert.IsAssignableFrom<IEnumerable<LanguageContactEventDto>>(okObjectResult.Value);
+            // Check that the result is the correct type
+            var actionResult = Assert.IsType<ActionResult<PaginatedList<LanguageContactEventDto>>>(result);
+            var okObjectResult = Assert.IsType<OkObjectResult>(actionResult.Result);
 
-            Assert.Equal(3, returnedDtos.Count());
+            // Check that the returned value is the paginated list
+            var returnedPaginatedList = Assert.IsType<PaginatedList<LanguageContactEventDto>>(okObjectResult.Value);
+
+            // Verify the properties of the paginated list
+            Assert.Equal(3, returnedPaginatedList.TotalCount);
+            Assert.Equal(1, returnedPaginatedList.PageIndex);
+            Assert.Equal(3, returnedPaginatedList.Items.Count);
+            Assert.All(returnedPaginatedList.Items, item => Assert.Equal("Trade", item.Type));
+
+            // Verify that mediator.Send was called with the correct query
+            _mockMediator.Verify(m => m.Send(
+                It.Is<GetFilteredLanguageContactEventsQuery>(q =>
+                    q.PageNumber == 1 &&
+                    q.PageSize == 10 &&
+                    q.Type == ContactType.Trade),
+                It.IsAny<CancellationToken>()),
+                Times.Once);
         }
 
         [Fact]

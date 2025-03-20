@@ -11,6 +11,9 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using LinguisticsApp.WebApi.Middleware;
+using LinguisticsApp.Infrastructure.Service.User;
+using System.Security.Claims;
+using Microsoft.IdentityModel.JsonWebTokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -55,6 +58,8 @@ builder.Services.AddApplication();
 builder.Services.Configure<JwtAuthOptions>(builder.Configuration.GetSection("JwtAuth"));
 builder.Services.AddScoped<IAuthService, JwtAuthService>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<IUserService, UserService>();
+
 
 var jwtOptions = builder.Configuration.GetSection("JwtAuth").Get<JwtAuthOptions>() ?? new JwtAuthOptions();
 var key = Encoding.UTF8.GetBytes(jwtOptions.SecretKey);
@@ -69,6 +74,11 @@ builder.Services.AddAuthentication(options =>
 {
     options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
     options.SaveToken = true;
+
+    ///exp
+    options.TokenValidationParameters.NameClaimType = JwtRegisteredClaimNames.Name;
+    options.TokenValidationParameters.RoleClaimType = ClaimTypes.Role;
+
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = !string.IsNullOrEmpty(jwtOptions.Issuer),
@@ -110,6 +120,8 @@ using (var scope = app.Services.CreateScope())
     {
         var dbContext = services.GetRequiredService<LinguisticsDbContext>();
         var authService = services.GetRequiredService<IAuthService>();
+        var userService = services.GetRequiredService<IUserService>();
+
 
         DbInitializer.Initialize(services, true);
     }
@@ -121,3 +133,8 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.Run();
+
+public partial class Program
+{
+
+}

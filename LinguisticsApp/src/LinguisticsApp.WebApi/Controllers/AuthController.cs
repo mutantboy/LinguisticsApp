@@ -1,11 +1,13 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using LinguisticsApp.Application.Common.Interfaces;
+using LinguisticsApp.Application.Common.Interfaces.Services;
 using LinguisticsApp.Application.Common.Commands.UserCommands;
 using LinguisticsApp.Application.Common.DTOs.AuthDTOs;
-using LinguisticsApp.Application.Common.Interfaces.Services;
 using LinguisticsApp.DomainModel.DomainModel;
 using LinguisticsApp.DomainModel.RichTypes;
+using LinguisticsApp.Infrastructure.Service.User;
+using System.Security.Claims;
+using Microsoft.IdentityModel.JsonWebTokens;
 
 namespace LinguisticsApp.WebApi.Controllers
 {
@@ -13,16 +15,17 @@ namespace LinguisticsApp.WebApi.Controllers
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
-        private readonly IUnitOfWork _unitOfWork;
-        private readonly IAuthService _authService;
+        private readonly IUserService _userService;
 
-        public AuthController(IUnitOfWork unitOfWork, IAuthService authService)
+        public AuthController(IUserService userService)
         {
-            _unitOfWork = unitOfWork;
-            _authService = authService;
+            _userService = userService;
         }
 
         [HttpPost("login")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(AuthResultDto))]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<AuthResultDto>> Login([FromBody] LoginDto model)
         {
             if (!ModelState.IsValid)
@@ -30,26 +33,12 @@ namespace LinguisticsApp.WebApi.Controllers
 
             try
             {
-                var email = new Email(model.Email);
-                var user = await _unitOfWork.Users.GetByEmailAsync(email);
+                var result = await _userService.LoginAsync(model);
 
-                if (user == null)
+                if (result == null)
                     return BadRequest(new { message = "Invalid email or password" });
 
-                if (!_authService.VerifyPassword(user.Password, model.Password))
-                    return BadRequest(new { message = "Invalid email or password" });
-
-                var token = _authService.GenerateToken(user);
-
-                var response = new AuthResultDto
-                {
-                    Token = token,
-                    UserName = $"{user.FirstName} {user.LastName}",
-                    Role = user is Admin ? "Admin" : "Researcher",
-                    UserId = user.Id.Value
-                };
-
-                return Ok(response);
+                return Ok(result);
             }
             catch (Exception ex)
             {
@@ -58,6 +47,9 @@ namespace LinguisticsApp.WebApi.Controllers
         }
 
         [HttpPost("register")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(AuthResultDto))]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<AuthResultDto>> Register([FromBody] RegisterDto model)
         {
             if (!ModelState.IsValid)
@@ -65,58 +57,12 @@ namespace LinguisticsApp.WebApi.Controllers
 
             try
             {
-                var email = new Email(model.Email);
-                var existingUser = await _unitOfWork.Users.GetByEmailAsync(email);
+                var result = await _userService.RegisterAsync(model);
 
-                if (existingUser != null)
-                    return BadRequest(new { message = "Email already registered" });
+                if (result == null)
+                    return BadRequest(new { message = "Email already registered or invalid data provided" });
 
-                var hashedPassword = _authService.HashPassword(model.Password);
-
-                User user;
-                var userId = UserId.New();
-
-                if (model.IsAdmin)
-                {
-                    user = new Admin(
-                        userId,
-                        email, 
-                        hashedPassword,
-                        model.FirstName,
-                        model.LastName,
-                        false 
-                    );
-                }
-                else
-                {
-                    if (string.IsNullOrEmpty(model.Institution) || !model.Field.HasValue)
-                        return BadRequest(new { message = "Institution and field are required for researchers" });
-
-                    user = new Researcher(
-                        userId,
-                        email, 
-                        hashedPassword,
-                        model.FirstName,
-                        model.LastName,
-                        model.Institution,
-                        model.Field.Value
-                    );
-                }
-
-                await _unitOfWork.Users.AddAsync(user);
-                await _unitOfWork.SaveChangesAsync();
-
-                var token = _authService.GenerateToken(user);
-
-                var response = new AuthResultDto
-                {
-                    Token = token,
-                    UserName = $"{user.FirstName} {user.LastName}",
-                    Role = user is Admin ? "Admin" : "Researcher",
-                    UserId = user.Id.Value
-                };
-
-                return Ok(response);
+                return Ok(result);
             }
             catch (Exception ex)
             {
@@ -126,6 +72,10 @@ namespace LinguisticsApp.WebApi.Controllers
 
         [HttpPost("change-password")]
         [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> ChangePassword([FromBody] UpdatePasswordCommand model)
         {
             if (!ModelState.IsValid)
@@ -133,22 +83,26 @@ namespace LinguisticsApp.WebApi.Controllers
 
             try
             {
-                if (!Guid.TryParse(User.FindFirst("sub")?.Value, out var userIdGuid))
-                    return Unauthorized();
+                var userIdClaim = User.FindFirst(JwtRegisteredClaimNames.Sub) ??
+                                 User.FindFirst(ClaimTypes.NameIdentifier) ??
+                                 User.Claims.FirstOrDefault(c => c.Type.EndsWith("nameidentifier", StringComparison.OrdinalIgnoreCase));
+
+                if (userIdClaim == null)
+                {
+                    var allClaims = string.Join(", ", User.Claims.Select(c => $"{c.Type}: {c.Value}"));
+                    return Unauthorized(new { message = "User ID claim not found", availableClaims = allClaims });
+                }
+
+                if (!Guid.TryParse(userIdClaim.Value, out var userIdGuid))
+                {
+                    return Unauthorized(new { message = "Invalid user ID format", value = userIdClaim.Value });
+                }
 
                 var userId = new UserId(userIdGuid);
+                var result = await _userService.ChangePasswordAsync(userId, model);
 
-                var user = await _unitOfWork.Users.GetByIdAsync(userId);
-                if (user == null)
-                    return NotFound(new { message = "User not found" });
-
-                if (!_authService.VerifyPassword(user.Password, model.CurrentPassword))
-                    return BadRequest(new { message = "Current password is incorrect" });
-
-                var hashedPassword = _authService.HashPassword(model.NewPassword);
-                user.UpdatePassword(hashedPassword);
-
-                await _unitOfWork.SaveChangesAsync();
+                if (!result)
+                    return BadRequest(new { message = "Current password is incorrect or user not found" });
 
                 return Ok(new { message = "Password updated successfully" });
             }

@@ -1,4 +1,5 @@
 ﻿using LinguisticsApp.Application.Common.Interfaces.Repository;
+using LinguisticsApp.Application.Common.Models;
 using LinguisticsApp.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -70,6 +71,24 @@ namespace LinguisticsApp.Infrastructure.Repository
         public virtual IQueryable<TEntity> GetQueryable()
         {
             return _dbSet.AsQueryable();
+        }
+
+        public virtual async Task<PaginatedList<TEntity>> GetPagedAsync(int pageNumber, int pageSize,
+        Expression<Func<TEntity, bool>>? predicate = null,
+        Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null)
+        {
+            IQueryable<TEntity> query = _dbSet;
+
+            if (predicate != null)
+                query = query.Where(predicate);
+
+            if (orderBy != null)
+                query = orderBy(query);
+            else { }
+                // Default ordering if you have a common property like CreatedAt
+                // query = query.OrderByDescending(e => EF.Property<DateTime>(e, "CreatedAt"));
+
+           return await PaginatedList<TEntity>.CreateAsync(query, pageNumber, pageSize);
         }
     }
 }

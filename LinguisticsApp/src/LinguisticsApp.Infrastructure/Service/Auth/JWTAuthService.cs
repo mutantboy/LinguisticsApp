@@ -11,6 +11,8 @@ using LinguisticsApp.DomainModel.RichTypes;
 using CustomTokenResult = LinguisticsApp.Application.Common.TokenValidationResult;
 using LinguisticsApp.Infrastructure.Service.Auth;
 using LinguisticsApp.Application.Common;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
 
 namespace LinguisticsApp.Infrastructure.Auth
 {
@@ -142,9 +144,16 @@ namespace LinguisticsApp.Infrastructure.Auth
                     return CustomTokenResult.Failed("Token is expired");
             }
 
-            var subClaim = principal.FindFirst(JwtRegisteredClaimNames.Sub);
+            var subClaim = principal.FindFirst(JwtRegisteredClaimNames.Sub) 
+                ?? principal.FindFirst(ClaimTypes.NameIdentifier) 
+                ?? principal.Claims.FirstOrDefault(c => c.Type.EndsWith("nameidentifier", StringComparison.OrdinalIgnoreCase));
             if (subClaim == null || !Guid.TryParse(subClaim.Value, out var userId))
-                return CustomTokenResult.Failed("Invalid user ID");
+            {
+                // Log all available claims for troubleshooting
+                var allClaims = string.Join(", ", principal.Claims.Select(c => $"{c.Type}: {c.Value}"));
+                // Log this information
+                return CustomTokenResult.Failed("Token not found");
+            }
 
             var roleClaim = principal.FindFirst(ClaimTypes.Role);
             var role = roleClaim?.Value == "Admin" ? UserRole.Admin : UserRole.Researcher;
